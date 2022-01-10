@@ -6,15 +6,20 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
 
-RcppExport SEXP _rcpp_module_boot_stan_fit4marlasso_mod();
+
+RcppExport SEXP _rcpp_module_boot_stan_fit4varlasso_mod();
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_rcpp_module_boot_stan_fit4marlasso_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4marlasso_mod, 0},
+    {"_rcpp_module_boot_stan_fit4varlasso_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4varlasso_mod, 0},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_marlasso(DllInfo *dll) {
+RcppExport void R_init_varlasso(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

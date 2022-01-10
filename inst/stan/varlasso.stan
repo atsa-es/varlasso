@@ -1,0 +1,181 @@
+data {
+  int<lower=0> n_time;           // years
+  int<lower=0> n_spp;            // species
+  int<lower=0> n_off;            // non-zero off-diagonals
+  int<lower=1> n_q;              // unique proc SD
+  int<lower=1> n_r;              // unique obs SD
+  int id_q[n_spp];                 // IDs for proc SD
+  int id_r[n_spp];                 // IDs for obs SD
+  int<lower=0> rc_off[n_off,2];  // indices of non-zero off-diags
+  int<lower=0> n_pos; // number of non-missing observations
+  int<lower=0> time_index[n_pos];
+  int<lower=0> species_index[n_pos];
+  real yy[n_pos];       // data
+  real b_mu[n_off]; // prior on mean of offdiagonal
+  real b_sd[n_off]; // prior on sd offdiagonal
+  real b_mu_diag[n_spp];// prior on mean of diagonal
+  real b_sd_diag[n_spp];// prior on sd of diagonal
+  int off_diag_priors; // 0 if normal, 1 if Student-t, 2 if Laplace, 3 if horseshoe
+  real<lower=0> sigma_proc_mu; // optional
+  real<lower=0> sigma_obs_mu; // optional
+  real<lower=0> sigma_proc_sd; // optional
+  real<lower=0> sigma_obs_sd; // optional
+  real<lower=0> nu_known; // optional
+  real<lower=0> global_scale;
+  real<lower=0> slab_scale;
+  real<lower=0> slab_df;
+  real<lower=0> sigma_scale_df;
+  real<lower=0> sigma_scale_sd;
+  int priors_only; // whether to sample from priors only
+}
+transformed data {
+  int est_nu; // whether to estimate student-t parameters
+  int est_hs; // whether to estimate hs parameters
+  int est_lambda; // whether to estimate laplace/student-t prior parameters
+  real dummy;
+  // initialize
+  est_nu = 0;
+  est_hs = 0;
+  est_lambda = 0;
+  dummy = 0; // for sampling from priors
+  // indicators
+  if(off_diag_priors==1) {
+    est_nu = 1;
+    if(nu_known > 0) est_nu = 0;
+  }
+  if(off_diag_priors==1) est_lambda = 1;
+  if(off_diag_priors==2) est_lambda = 1;
+  if(off_diag_priors==3) est_hs = 1;
+}
+parameters {
+  real<lower=0> sigma_obs[n_r];
+  real<lower=0> sigma_scale; // variance for shrinkage / hierarchical B off diags
+  vector[n_off] B_z;  // off-diags of B, in normal (0,1) space
+  vector<lower=-1,upper=1>[n_spp] Bdiag;   // diag of B
+  vector[n_spp] x0;
+  vector<lower=2>[est_nu] nu; // student-t df parameters for Student-t priors
+  vector<lower=0>[est_lambda*n_off] lambda2; // parameters for Student-t and laplace priors
+  vector<lower=0>[est_hs] c2_hs; // c parameters for horseshoe priors
+  real<lower=0> lambda[est_hs*n_off]; // parameters for horseshoe priors
+  real<lower=0> sigma_proc[n_q];           // proc SD
+  matrix[n_spp,n_time-1] devs;       // states
+}
+transformed parameters {
+  matrix[n_spp,n_spp] Bmat;
+  matrix[n_spp,n_time] x;       // states
+  real<lower=0> lambda_tilde[est_hs*n_off]; // parameters for horseshoe priors
+  vector<lower=0>[n_spp] sigma;
+  vector[n_off] Boffd;  // off-diags of B
+
+  // B off-diagonals
+  if(off_diag_priors == 0) {
+     //Normal priors
+     //sigma_scale ~ student_t(3,0,2); // not estimated
+     for(i in 1:n_off) {
+        Boffd[i] = B_z[i]*b_sd[i] + b_mu[i];//~ normal(b_mu[i], b_sd[i]);
+     }
+  }
+  if(off_diag_priors == 1) {
+     //Student t priors
+     for(i in 1:n_off) {
+       Boffd[i] = sigma_scale * sqrt(lambda2[i]) * B_z[i];
+      //Boffd[i] ~ normal(0, sigma_scale*sqrt(1/inv_lambda2[i]));
+     }
+  }
+  if(off_diag_priors == 2) {
+    for(i in 1:n_off) {
+      Boffd[i] = sigma_scale * sqrt(lambda2[i]) * B_z[i];
+      //Boffd[i] ~ double_exponential(0, sigma_scale);
+     }
+  }
+  if(off_diag_priors == 3) {
+    for(i in 1:n_off) {
+      lambda_tilde[i] = sqrt((c2_hs[1] * lambda[i] * lambda[i]) / (c2_hs[1] + square(sigma_scale * lambda[i])));
+      //lambda_tilde[i] = sqrt(c2[1])*lambda[i] / sqrt(c2[1] + sigma_scale*lambda[i]*lambda[i]);
+      Boffd[i] = B_z[i]*sigma_scale*lambda_tilde[i]; //normal(0, sigma_scale*lambda_tilde[i]);
+    }
+  }
+
+  // construct B matrix, starting with diagonal
+  Bmat = diag_matrix(Bdiag);
+  // off-diagonals
+  for(i in 1:n_off) {
+    Bmat[rc_off[i,1],rc_off[i,2]] = Boffd[i];
+  }
+  // this maps shared variances
+  for(i in 1:n_spp) {
+    sigma[i] = sigma_proc[id_q[i]];
+  }
+  // this is autoregression equation
+  x[,1] = x0;
+  for(t in 2:n_time) {
+    x[,t] = Bmat * x[,t-1] + sigma .* devs[,t-1];
+  }
+
+}
+model {
+  // PRIORS
+  // initial state
+  x0 ~ std_normal();
+  for(i in 1:n_spp) {
+    devs[i] ~ std_normal();
+  }
+  // process SD's
+  sigma_proc ~ normal(sigma_proc_mu,sigma_proc_sd);
+  // obs SD
+  sigma_obs ~ normal(sigma_proc_mu,sigma_obs_sd);
+  // B diagonal
+  Bdiag ~ normal(b_mu_diag,b_sd_diag);
+
+  // std normal prior on B_z, transformed in transformed params block
+  B_z ~ std_normal();
+
+  if(off_diag_priors == 1) {
+    //Student t priors
+    sigma_scale ~ student_t(sigma_scale_df,0,sigma_scale_sd);
+    if(est_nu==1) {
+      nu[1] ~ gamma(2, 0.1);
+      for(i in 1:n_off) {
+        lambda2[i] ~ inv_gamma(nu[1]/2, nu[1]/2); // vector
+      }
+    } else {
+      for(i in 1:n_off) {
+        lambda2[i] ~ inv_gamma(nu_known/2, nu_known/2); // vector
+      }
+    }
+  }
+  if(off_diag_priors == 2) {
+    sigma_scale ~ student_t(sigma_scale_df,0,sigma_scale_sd);
+    lambda2 ~ exponential(0.5); // vector
+  }
+  if(off_diag_priors == 3) {
+    // regularized horseshore prior in rstanarm
+    // see 2.8 in Piironen and Vehtari 2017
+    // global_scale argument equal to the ratio of the expected number of non-zero
+    //coefficients to the expected number of zero coefficients, divided by the square
+    //root of the number of observations
+    //hs(df = 1, global_df = 1, global_scale = 0.01, slab_df = 4, slab_scale = 2.5)
+    lambda ~ student_t(1, 0.0, 1.0); // df_lambda can also be passed in
+    sigma_scale ~ student_t(3, 0, global_scale);//cauchy(0, global_scale);
+    c2_hs ~ inv_gamma(slab_df/2.0, slab_df*slab_scale*slab_scale/2.0);
+    //c_hs ~ student_t(slab_df, 0, slab_scale);
+  }
+
+  // LIKELIHOOD
+  if(priors_only==0) {
+    for(i in 1:n_pos) {
+      yy[i] ~ normal(x[species_index[i],time_index[i]], sigma_obs[id_r[species_index[i]]]);
+    }
+  } else {
+    dummy ~ normal(0,1);
+  }
+
+}
+generated quantities {
+  vector[n_pos] log_lik;
+  if(priors_only==0) {
+    for(i in 1:n_pos) {
+      log_lik[i] = normal_lpdf(yy[i] | x[species_index[i],time_index[i]], sigma_obs[id_r[species_index[i]]]);
+    }
+  }
+}
