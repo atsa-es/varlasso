@@ -1,4 +1,4 @@
-Package: marlasso
+Package: varlasso
 Type: Package
 Title: Vector Autoregressive State Space Models With Shrinkage
 Version: 0.0.1
@@ -8,7 +8,7 @@ Authors@R: as.person(c(
     "Kristin Marshall <kristin.marshall@noaa.gov> [ctb]"
   ))
 Maintainer: Eric Ward <eric.ward@noaa.gov>
-Description: The marlasso package uses Stan (mc-stan.org) to fit VAR state space models
+Description: The varlasso package uses Stan (mc-stan.org) to fit VAR state space models
     with optional shrinkage priors on B matrix elements (autoregression coefficients).
 License: GPL (>=3)
 Depends:
@@ -34,11 +34,10 @@ Suggests:
     rmarkdown
 Encoding: UTF-8
 LazyData: true
-URL: https://nwfsc-timeseries.github.io/marlasso/, https://github.com/nwfsc-timeseries/marlasso
-BugReports: https://github.com/nwfsc-timeseries/marlasso/issues
+URL: https://nwfsc-timeseries.github.io/varlasso/, https://github.com/nwfsc-timeseries/varlasso
+BugReports: https://github.com/nwfsc-timeseries/varlasso/issues
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 SystemRequirements: GNU make
 Biarch: true
 VignetteBuilder: knitr
-

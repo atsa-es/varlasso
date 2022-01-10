@@ -276,7 +276,7 @@ fit <- function(data,
     pars <- c(pars, "lambda2")
   }
   if (off_diag_priors == 3) {
-    pars <- c(pars, "c_hs", "lambda")
+    pars <- c(pars, "c2_hs", "lambda")
   }
 
   if (!is.null(pars_to_monitor)) {
