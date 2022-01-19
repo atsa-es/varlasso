@@ -123,7 +123,7 @@ model {
   // process SD's
   sigma_proc ~ normal(sigma_proc_mu,sigma_proc_sd);
   // obs SD
-  sigma_obs ~ normal(sigma_proc_mu,sigma_obs_sd);
+  sigma_obs ~ normal(sigma_obs_mu,sigma_obs_sd);
   // B diagonal
   Bdiag ~ normal(b_mu_diag,b_sd_diag);
 

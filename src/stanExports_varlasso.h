@@ -918,7 +918,7 @@ public:
             current_statement_begin__ = 124;
             lp_accum__.add(normal_log<propto__>(sigma_proc, sigma_proc_mu, sigma_proc_sd));
             current_statement_begin__ = 126;
-            lp_accum__.add(normal_log<propto__>(sigma_obs, sigma_proc_mu, sigma_obs_sd));
+            lp_accum__.add(normal_log<propto__>(sigma_obs, sigma_obs_mu, sigma_obs_sd));
             current_statement_begin__ = 128;
             lp_accum__.add(normal_log<propto__>(Bdiag, b_mu_diag, b_sd_diag));
             current_statement_begin__ = 131;
