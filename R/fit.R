@@ -9,6 +9,7 @@
 #' @param shared_r Optional vector with
 #'   integers indicating which observation variance parameters are shared;
 #'   defaults to shared observation variances across species
+#' @param est_trend Whether or not to estimate a species-specific trend, defaults to FALSE
 #' @param b_mu_diag Prior mean for diagonal elements. Can be vector or scalar
 #' @param b_sd_diag Prior sd for diagonal elements. Can be vector or scalar
 #' @param b_mu Prior mean for off diagonal elements, when Normal priors used.
@@ -109,12 +110,15 @@
 #' )
 #'
 #' # include example for just sampling from priors
-#' m <- fit(data = df, chains = chains, iter = iter,
-#' warmup = warmup, thin = thin,prior_only = TRUE)
+#' m <- fit(
+#'   data = df, chains = chains, iter = iter,
+#'   warmup = warmup, thin = thin, prior_only = TRUE
+#' )
 #' }
 fit <- function(data,
                 shared_q = NULL,
                 shared_r = NULL,
+                est_trend = FALSE,
                 b_mu_diag = 0.7,
                 b_sd_diag = 1,
                 b_mu = 0,
@@ -135,10 +139,10 @@ fit <- function(data,
                 warmup = floor(iter / 2),
                 thin = 1,
                 chains = 3,
-                save_log_lik=FALSE,
-                map_estimation=FALSE,
-                est_hessian=FALSE,
-                prior_only=FALSE,
+                save_log_lik = FALSE,
+                map_estimation = FALSE,
+                est_hessian = FALSE,
+                prior_only = FALSE,
                 ...) {
 
   # check data
@@ -238,6 +242,7 @@ fit <- function(data,
     n_off = n_spp * (n_spp - 1),
     n_q = n_q,
     n_r = n_r,
+    est_trend = as.numeric(est_trend),
     id_q = id_q,
     id_r = id_r,
     time_index = data$time,
@@ -263,7 +268,8 @@ fit <- function(data,
   )
 
   pars <- c("sigma_proc", "sigma_obs", "Bmat", "x0")
-  if(save_log_lik==TRUE) pars = c(pars,"log_lik")
+  if (save_log_lik == TRUE) pars <- c(pars, "log_lik")
+  if (est_trend == TRUE) pars <- c(pars, "U")
   if (off_diag_priors > 0) pars <- c(pars, "sigma_scale")
   if (off_diag_priors == 1) {
     pars <- c(pars, "lambda2")
@@ -302,12 +308,12 @@ fit <- function(data,
     sampling_args <- list(
       object = stanmodels$varlasso,
       data = data_list,
-      #verbose = verbose,
+      # verbose = verbose,
       hessian = est_hessian,
       ...
     )
     out <- do.call(optimizing, sampling_args)
   }
 
-  return(list(fit=out, data = data_list, pars = pars))
+  return(list(fit = out, data = data_list, pars = pars))
 }

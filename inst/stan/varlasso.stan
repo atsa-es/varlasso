@@ -27,6 +27,7 @@ data {
   real<lower=0> sigma_scale_df;
   real<lower=0> sigma_scale_sd;
   int priors_only; // whether to sample from priors only
+  int est_trend; // whether to estimate a trend for each species
 }
 transformed data {
   int est_nu; // whether to estimate student-t parameters
@@ -53,6 +54,7 @@ parameters {
   vector[n_off] B_z;  // off-diags of B, in normal (0,1) space
   vector<lower=0,upper=1>[n_spp] Bdiag;   // diag of B
   vector[n_spp] x0;
+  vector[est_trend*n_spp] U;
   vector<lower=2>[est_nu] nu; // student-t df parameters for Student-t priors
   vector<lower=0>[est_lambda*n_off] lambda2; // parameters for Student-t and laplace priors
   vector<lower=0>[est_hs] c2_hs; // c parameters for horseshoe priors
@@ -111,6 +113,9 @@ transformed parameters {
   x[,1] = x0;
   for(t in 2:n_time) {
     x[,t] = Bmat * x[,t-1] + sigma .* devs[,t-1];
+    if(est_trend == 1) {
+      x[,t] = x[,t] + U;
+    }
   }
 
 }
@@ -120,6 +125,9 @@ model {
   x0 ~ std_normal();
   for(i in 1:n_spp) {
     devs[i] ~ std_normal();
+  }
+  if(est_trend==1) {
+    U ~ std_normal();
   }
   // process SD's
   sigma_proc ~ normal(sigma_proc_mu,sigma_proc_sd);
