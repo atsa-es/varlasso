@@ -495,7 +495,7 @@ public:
             Bdiag(j_1__) = vals_r__[pos__++];
         }
         try {
-            writer__.vector_lub_unconstrain(-(1), 1, Bdiag);
+            writer__.vector_lub_unconstrain(0, 1, Bdiag);
         } catch (const std::exception& e) {
             stan::lang::rethrow_located(std::runtime_error(std::string("Error transforming variable Bdiag: ") + e.what()), current_statement_begin__, prog_reader__());
         }
@@ -681,9 +681,9 @@ public:
             Eigen::Matrix<local_scalar_t__, Eigen::Dynamic, 1> Bdiag;
             (void) Bdiag;  // dummy to suppress unused var warning
             if (jacobian__)
-                Bdiag = in__.vector_lub_constrain(-(1), 1, n_spp, lp__);
+                Bdiag = in__.vector_lub_constrain(0, 1, n_spp, lp__);
             else
-                Bdiag = in__.vector_lub_constrain(-(1), 1, n_spp);
+                Bdiag = in__.vector_lub_constrain(0, 1, n_spp);
             current_statement_begin__ = 55;
             Eigen::Matrix<local_scalar_t__, Eigen::Dynamic, 1> x0;
             (void) x0;  // dummy to suppress unused var warning
@@ -1097,7 +1097,7 @@ public:
         for (size_t j_1__ = 0; j_1__ < B_z_j_1_max__; ++j_1__) {
             vars__.push_back(B_z(j_1__));
         }
-        Eigen::Matrix<double, Eigen::Dynamic, 1> Bdiag = in__.vector_lub_constrain(-(1), 1, n_spp);
+        Eigen::Matrix<double, Eigen::Dynamic, 1> Bdiag = in__.vector_lub_constrain(0, 1, n_spp);
         size_t Bdiag_j_1_max__ = n_spp;
         for (size_t j_1__ = 0; j_1__ < Bdiag_j_1_max__; ++j_1__) {
             vars__.push_back(Bdiag(j_1__));

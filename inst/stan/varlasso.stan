@@ -51,7 +51,7 @@ parameters {
   real<lower=0> sigma_obs[n_r];
   real<lower=0> sigma_scale; // variance for shrinkage / hierarchical B off diags
   vector[n_off] B_z;  // off-diags of B, in normal (0,1) space
-  vector<lower=-1,upper=1>[n_spp] Bdiag;   // diag of B
+  vector<lower=0,upper=1>[n_spp] Bdiag;   // diag of B
   vector[n_spp] x0;
   vector<lower=2>[est_nu] nu; // student-t df parameters for Student-t priors
   vector<lower=0>[est_lambda*n_off] lambda2; // parameters for Student-t and laplace priors
