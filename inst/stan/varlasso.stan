@@ -84,8 +84,9 @@ transformed parameters {
   }
   if(off_diag_priors == 2) {
     for(i in 1:n_off) {
+      // this is implementation by Jeffrey Arnold
       Boffd[i] = sigma_scale * sqrt(lambda2[i]) * B_z[i];
-      //Boffd[i] ~ double_exponential(0, sigma_scale);
+      //Boffd[i] = B_z[i];
      }
   }
   if(off_diag_priors == 3) {
@@ -127,10 +128,12 @@ model {
   // B diagonal
   Bdiag ~ normal(b_mu_diag,b_sd_diag);
 
-  // std normal prior on B_z, transformed in transformed params block
   B_z ~ std_normal();
-
+  //if(off_diag_priors == 0) {
+    // std normal prior on B_z,
+  //}
   if(off_diag_priors == 1) {
+    //B_z ~ std_normal();
     //Student t priors
     sigma_scale ~ student_t(sigma_scale_df,0,sigma_scale_sd);
     if(est_nu==1) {
@@ -145,10 +148,13 @@ model {
     }
   }
   if(off_diag_priors == 2) {
+    //B_z ~ std_normal();
     sigma_scale ~ student_t(sigma_scale_df,0,sigma_scale_sd);
+    //B_z ~ double_exponential(0, sigma_scale);
     lambda2 ~ exponential(0.5); // vector
   }
   if(off_diag_priors == 3) {
+    //B_z ~ std_normal();
     // regularized horseshore prior in rstanarm
     // see 2.8 in Piironen and Vehtari 2017
     // global_scale argument equal to the ratio of the expected number of non-zero

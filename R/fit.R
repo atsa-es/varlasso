@@ -299,12 +299,15 @@ fit <- function(data,
       chains = chains, ...
     )
   } else {
-    out <- rstan::optimizing(
+    sampling_args <- list(
       object = stanmodels$varlasso,
       data = data_list,
-      hessian = est_hessian, ...
+      #verbose = verbose,
+      hessian = est_hessian,
+      ...
     )
+    out <- do.call(optimizing, sampling_args)
   }
 
-  return(out)
+  return(list(fit=out, data = data_list, pars = pars))
 }
