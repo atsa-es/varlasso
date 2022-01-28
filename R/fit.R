@@ -8,7 +8,10 @@
 #'   to constant process variances shared across species.
 #' @param shared_r Optional vector with
 #'   integers indicating which observation variance parameters are shared;
-#'   defaults to shared observation variances across species
+#'   defaults to shared observation variances across species.
+#' @param fixed_r Optional scalar or vector of values to be passed in for a model
+#' where observation error variances are not estimated. Defaults to NULL, and them being
+#' estimated. Cannot be set to zero.
 #' @param est_trend Whether or not to estimate a species-specific trend, defaults to FALSE
 #' @param b_mu_diag Prior mean for diagonal elements. Can be vector or scalar
 #' @param b_sd_diag Prior sd for diagonal elements. Can be vector or scalar
@@ -18,7 +21,8 @@
 #' Can be vector or scalar, defaults to 1
 #' @param off_diag_prior Character string denoting which prior to use for
 #' off-diagonal elements. Can be "normal" (independent priors estimated for each)
-#' parameter, "student-t" (hierarchical student-t model used with estimated scale
+#' parameter, "normal_pp" (normal prior with partial pooling, where model is hierarchical with an
+#' estimated standard deviation), "student-t" (hierarchical student-t model used with estimated scale
 #' and df), "laplace" (double-exponential model used with estimated scale) or
 #' "hs" (regularized horseshoe prior used, following parameterization in rstanarm)
 #' @param prior_sigma_pro_mu Optional, prior mean for for process variance scale. The
@@ -118,12 +122,13 @@
 fit <- function(data,
                 shared_q = NULL,
                 shared_r = NULL,
+                fixed_r = NULL,
                 est_trend = FALSE,
                 b_mu_diag = 0.7,
                 b_sd_diag = 1,
                 b_mu = 0,
                 b_sd = 1,
-                off_diag_prior = c("normal", "student-t", "laplace", "hs"),
+                off_diag_prior = c("normal", "student-t", "laplace", "hs","normal_pp"),
                 prior_sigma_pro_mu = 0,
                 prior_sigma_pro_sd = 2,
                 prior_sigma_obs_mu = 0,
@@ -221,10 +226,10 @@ fit <- function(data,
   }
 
   if (length(off_diag_prior) > 1) off_diag_prior <- off_diag_prior[1]
-  if (off_diag_prior %in% c("normal", "student-t", "laplace", "hs") == FALSE) {
+  if (off_diag_prior %in% c("normal", "student-t", "laplace", "hs","normal_pp") == FALSE) {
     stop("Error: off_diag_prior must be one of 'normal','student-t','laplace','hs'")
   }
-  off_diag_priors <- match(off_diag_prior, c("normal", "student-t", "laplace", "hs"))
+  off_diag_priors <- match(off_diag_prior, c("normal", "student-t", "laplace", "hs","normal_pp"))
   off_diag_priors <- off_diag_priors - 1 # index at 0
 
   nu_known <- 0
@@ -235,6 +240,20 @@ fit <- function(data,
     }
   }
 
+  if(!is.null(fixed_r)) {
+    if(length(fixed_r)==1) {
+      fixed_r = rep(fixed_r, n_spp)
+    } else {
+      if(length(fixed_r) == n_spp) {
+        # do nothing, right length
+      } else {
+        stop("Error: if fixed_r is used, it must be length = 1 or number of species")
+      }
+    }
+
+  } else {
+    fixed_r = rep(0, n_spp)
+  }
   data_list <- list(
     n_pos = n_pos,
     n_time = n_time,
@@ -242,6 +261,7 @@ fit <- function(data,
     n_off = n_spp * (n_spp - 1),
     n_q = n_q,
     n_r = n_r,
+    fixed_r = fixed_r,
     est_trend = as.numeric(est_trend),
     id_q = id_q,
     id_r = id_r,
@@ -267,7 +287,8 @@ fit <- function(data,
     priors_only = as.numeric(prior_only)
   )
 
-  pars <- c("sigma_proc", "sigma_obs", "Bmat", "x0")
+  pars <- c("sigma_proc", "Bmat", "x0")
+  if (sum(fixed_r) == 0) pars <- c(pars,"sigma_obs")
   if (save_log_lik == TRUE) pars <- c(pars, "log_lik")
   if (est_trend == TRUE) pars <- c(pars, "U")
   if (off_diag_priors > 0) pars <- c(pars, "sigma_scale")
@@ -292,7 +313,6 @@ fit <- function(data,
       pars <- NULL
     }
   }
-
 
   if (map_estimation == FALSE) {
     out <- rstan::sampling(
