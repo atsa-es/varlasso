@@ -48,7 +48,8 @@
 #' @param thin MCMC thin, defaults to 1
 #' @param chains MCMC chains, defaults to 3
 #' @param save_log_lik Whether to save log_lik, defaults to FALSE for speed
-#' @param map_estimation Whether to do MAP / penalized maximum likelihood rather than full Bayesian, defaults to FALSE
+#' @param estimation Whether to do MCMC sampling ("sampling"; default), maximum posterior estimation
+#'  ("optimizing") or Stan's variational algrotim ("vb")
 #' @param est_hessian Whether to estimate hessian matrix if doing MAP estimation, defaults to FALSE
 #' @param prior_only Whether to only generate samples from the prior distribution, defaults to FALSE
 #' @param ... Extra arguments to pass to sampling
@@ -145,7 +146,7 @@ fit <- function(data,
                 thin = 1,
                 chains = 3,
                 save_log_lik = FALSE,
-                map_estimation = FALSE,
+                estimation = c("sampling","optimizing","vb"),
                 est_hessian = FALSE,
                 prior_only = FALSE,
                 ...) {
@@ -314,7 +315,7 @@ fit <- function(data,
     }
   }
 
-  if (map_estimation == FALSE) {
+  if (estimation[1] == "sampling") {
     out <- rstan::sampling(
       object = stanmodels$varlasso,
       data = data_list,
@@ -324,7 +325,8 @@ fit <- function(data,
       thin = thin,
       chains = chains, ...
     )
-  } else {
+  }
+  if (estimation[1] == "optimizing") {
     sampling_args <- list(
       object = stanmodels$varlasso,
       data = data_list,
@@ -333,6 +335,16 @@ fit <- function(data,
       ...
     )
     out <- do.call(optimizing, sampling_args)
+  }
+  if (estimation[1] == "vb") {
+    sampling_args <- list(
+      object = stanmodels$varlasso,
+      data = data_list,
+      iter = iter,
+      pars = pars,
+      ...
+    )
+    out <- do.call(vb, sampling_args)
   }
 
   return(list(fit = out, data = data_list, pars = pars))
