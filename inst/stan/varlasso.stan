@@ -121,6 +121,7 @@ transformed parameters {
   // this maps shared variances
   for(i in 1:n_spp) {
     sigma[i] = sigma_proc[id_q[i]];
+    if(off_diag_priors> 0) sigma[i] = sigma[i] * sigma_scale;
   }
   // this is autoregression equation
   x[,1] = x0;
@@ -161,20 +162,22 @@ model {
     B_z ~ std_normal();
   }
   if(off_diag_priors == 1) {
-    //B_z ~ std_normal();
+    B_z ~ std_normal();
     //Student t priors
     sigma_scale ~ student_t(sigma_scale_df,0,sigma_scale_sd);
     if(est_nu==1) {
       nu[1] ~ gamma(2, 0.1);
-      for(i in 1:n_off) {
-        lambda2[i] ~ inv_gamma(nu[1]/2, nu[1]/2); // vector of local variances
-        B_z[i] ~ student_t(nu[1], 0, sigma_scale);
-      }
+      lambda2 ~ inv_gamma(nu[1]/2, nu[1]/2);
+      //for(i in 1:n_off) {
+      //  lambda2[i] ~ inv_gamma(nu[1]/2, nu[1]/2); // vector of local variances
+        //B_z[i] ~ student_t(nu[1], 0, sigma_scale);
+      //}
     } else {
-      for(i in 1:n_off) {
-        B_z[i] ~ student_t(nu_known, 0, sigma_scale);
-        lambda2[i] ~ inv_gamma(nu_known/2, nu_known/2); // vector of local variances
-      }
+      lambda2 ~ inv_gamma(nu_known/2, nu_known/2);
+      //for(i in 1:n_off) {
+        //B_z[i] ~ student_t(nu_known, 0, sigma_scale);
+        //lambda2[i] ~ inv_gamma(nu_known/2, nu_known/2); // vector of local variances
+      //}
     }
   }
   if(off_diag_priors == 2) {

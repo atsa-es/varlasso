@@ -8,11 +8,13 @@ fit(
   data,
   shared_q = NULL,
   shared_r = NULL,
+  fixed_r = NULL,
+  est_trend = FALSE,
   b_mu_diag = 0.7,
   b_sd_diag = 1,
   b_mu = 0,
   b_sd = 1,
-  off_diag_prior = c("normal", "student-t", "laplace", "hs"),
+  off_diag_prior = c("normal", "student-t", "laplace", "hs", "normal_pp"),
   prior_sigma_pro_mu = 0,
   prior_sigma_pro_sd = 2,
   prior_sigma_obs_mu = 0,
@@ -29,7 +31,7 @@ fit(
   thin = 1,
   chains = 3,
   save_log_lik = FALSE,
-  map_estimation = FALSE,
+  estimation = c("sampling", "optimizing", "vb"),
   est_hessian = FALSE,
   prior_only = FALSE,
   ...
@@ -44,7 +46,13 @@ to constant process variances shared across species.}
 
 \item{shared_r}{Optional vector with
 integers indicating which observation variance parameters are shared;
-defaults to shared observation variances across species}
+defaults to shared observation variances across species.}
+
+\item{fixed_r}{Optional scalar or vector of values to be passed in for a model
+where observation error variances are not estimated. Defaults to NULL, and them being
+estimated. Cannot be set to zero.}
+
+\item{est_trend}{Whether or not to estimate a species-specific trend, defaults to FALSE}
 
 \item{b_mu_diag}{Prior mean for diagonal elements. Can be vector or scalar}
 
@@ -58,7 +66,8 @@ Can be vector or scalar, defaults to 1}
 
 \item{off_diag_prior}{Character string denoting which prior to use for
 off-diagonal elements. Can be "normal" (independent priors estimated for each)
-parameter, "student-t" (hierarchical student-t model used with estimated scale
+parameter, "normal_pp" (normal prior with partial pooling, where model is hierarchical with an
+estimated standard deviation), "student-t" (hierarchical student-t model used with estimated scale
 and df), "laplace" (double-exponential model used with estimated scale) or
 "hs" (regularized horseshoe prior used, following parameterization in rstanarm)}
 
@@ -101,7 +110,8 @@ loo::loo_moment_match() for example).}
 
 \item{save_log_lik}{Whether to save log_lik, defaults to FALSE for speed}
 
-\item{map_estimation}{Whether to do MAP / penalized maximum likelihood rather than full Bayesian, defaults to FALSE}
+\item{estimation}{Whether to do MCMC sampling ("sampling"; default), maximum posterior estimation
+("optimizing") or Stan's variational algrotim ("vb")}
 
 \item{est_hessian}{Whether to estimate hessian matrix if doing MAP estimation, defaults to FALSE}
 
@@ -168,7 +178,9 @@ m_hs <- fit(
 )
 
 # include example for just sampling from priors
-m <- fit(data = df, chains = chains, iter = iter,
-warmup = warmup, thin = thin,prior_only = TRUE)
+m <- fit(
+  data = df, chains = chains, iter = iter,
+  warmup = warmup, thin = thin, prior_only = TRUE
+)
 }
 }
