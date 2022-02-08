@@ -52,7 +52,7 @@ data {
   // options
   int priors_only; // whether to sample from priors only
   int est_trend; // whether to estimate a trend for each species
-  int est_process; // whether to fit a VAR and estimate process error only
+  int process_only; // whether to fit a VAR and estimate process error only
   int est_unique_reg;
 }
 transformed data {
@@ -80,7 +80,7 @@ transformed data {
   for(i in 1:n_spp) {
     if(fixed_r[i] != 0) est_sigma_obs = 0;
   }
-  if(est_process==1) est_sigma_obs = 0;
+  if(process_only==1) est_sigma_obs = 0;
 
   // convert vector to matrix for VAR
   for(i in 1:n_spp) {
@@ -95,6 +95,7 @@ transformed data {
   if(est_unique_reg==1) {
     unique_reg = n_off;
   }
+
 }
 parameters {
   real<lower=0> sigma_obs[est_sigma_obs * n_r];
@@ -106,7 +107,7 @@ parameters {
   vector<lower=2>[est_nu] nu; // student-t df parameters for Student-t priors
   vector<lower=0>[est_lambda*unique_reg] lambda2; // parameters for Student-t and laplace priors
   real<lower=0> sigma_proc[n_q];           // proc SD
-  matrix[n_spp*est_process,(n_time-1)*est_process] devs;       // states
+  matrix[n_spp*(1-process_only),(n_time-1)*(1-process_only)] devs;       // states
   // paramters specific to hs
   vector<lower=0>[est_hs*n_off] hs_local; // parameters for horseshoe priors
   real<lower=0> hs_global[est_hs];  // global shrinkage parameters
@@ -116,7 +117,7 @@ transformed parameters {
   matrix[n_spp,n_spp] Bmat;
   matrix[n_spp,n_time] x;       // states
   vector<lower=0>[n_spp] sigma;
-  vector<lower=0>[n_r * est_process] sigma_r;
+  vector<lower=0>[n_r * (1-process_only)] sigma_r;
   vector[n_off] Boffd;  // off-diags of B
 
   // B off-diagonals
@@ -153,7 +154,7 @@ transformed parameters {
     //if(off_diag_priors> 0) sigma[i] = sigma[i] * sigma_scale;
   }
   // this is autoregression equation for VARSS
-  if(est_process == 1) {
+  if(process_only == 0) {
     x[,1] = x0;
     for(t in 2:n_time) {
       x[,t] = Bmat * x[,t-1] + sigma .* devs[,t-1];
@@ -183,7 +184,7 @@ transformed parameters {
 model {
   // PRIORS
   x0 ~ std_normal();  // initial state
-  if(est_process==1) {
+  if(process_only==0) {
     for(i in 1:n_spp) {
       devs[i] ~ std_normal(); // process devs
     }
@@ -234,7 +235,7 @@ model {
     B_z ~ std_normal();
     hs_local ~ student_t(hs_df, 0, 1);
     // this is scaled by residual sd in brms when autoscale=T (default)
-    if(est_process==1) {
+    if(process_only==0) {
       hs_global ~ student_t(hs_df_global, 0, hs_scale_global * (sigma_proc[1]));
     } else {
       hs_global ~ student_t(hs_df_global, 0, hs_scale_global);
@@ -249,7 +250,7 @@ model {
 
   // LIKELIHOOD
   if(priors_only==0) {
-    if(est_process==1) {
+    if(process_only==0) {
       // VARSS
       for(i in 1:n_pos) {
         yy[i] ~ normal(x[species_index[i],time_index[i]], sigma_r[id_r[species_index[i]]]);
@@ -268,7 +269,7 @@ model {
 generated quantities {
   vector[n_pos] log_lik;
   if(priors_only==0) {
-    if(est_process==1) {
+    if(process_only==0) {
       for(i in 1:n_pos) {
         log_lik[i] = normal_lpdf(yy[i] | x[species_index[i],time_index[i]], sigma_r[id_r[species_index[i]]]);
       }

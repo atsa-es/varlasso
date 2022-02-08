@@ -290,7 +290,7 @@ fit <- function(data,
     hs_scale_global=hs$scale_global,
     hs_scale_slab=hs$scale_slab,
     priors_only = as.numeric(prior_only),
-    est_process = as.numeric(varss),
+    process_only = 1 - as.numeric(varss),
     est_unique_reg = as.numeric(unique_reg)
   )
 

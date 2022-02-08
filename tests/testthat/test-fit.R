@@ -38,6 +38,13 @@ test_that("model with normal priors works ", {
   )
   expect_equal(class(m$fit)[1], "stanfit")
 
+  set.seed(123)
+  m <- fit(
+    data = df, chains = chains, iter = iter,
+    warmup = warmup, thin = thin, varss=FALSE
+  )
+  expect_equal(class(m$fit)[1], "stanfit")
+
   #pars <- rstan::extract(m$fit)
 
   #expect_equal(mean(pars$sigma_obs), 0.0324634, tolerance = tol_level)
