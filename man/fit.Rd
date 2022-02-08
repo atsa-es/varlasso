@@ -10,21 +10,16 @@ fit(
   shared_r = NULL,
   fixed_r = NULL,
   est_trend = FALSE,
-  b_mu_diag = 0.7,
-  b_sd_diag = 1,
-  b_mu = 0,
-  b_sd = 1,
+  varss = TRUE,
+  b_diag = list(mu = 0.7, sd = 1),
+  b_offdiag = list(mu = 0, sd = 1),
   off_diag_prior = c("normal", "student-t", "laplace", "hs", "normal_pp"),
-  prior_sigma_pro_mu = 0,
-  prior_sigma_pro_sd = 2,
-  prior_sigma_obs_mu = 0,
-  prior_sigma_obs_sd = 2,
+  sigma_pro = list(mu = 0, sd = 1),
+  sigma_obs = list(mu = 0, sd = 1),
   nu = NULL,
-  sigma_scale_df = 3,
-  sigma_scale_sd = 2,
-  global_scale = 0.1,
-  slab_scale = 2.5,
-  slab_df = 4,
+  sigma_scale = list(df = 3, sd = 2),
+  hs = list(df = 1, df_global = 1, df_slab = 4, scale_global = 1, scale_slab = 2),
+  unique_reg = FALSE,
   pars_to_monitor = NULL,
   iter = 1000,
   warmup = floor(iter/2),
@@ -54,15 +49,13 @@ estimated. Cannot be set to zero.}
 
 \item{est_trend}{Whether or not to estimate a species-specific trend, defaults to FALSE}
 
-\item{b_mu_diag}{Prior mean for diagonal elements. Can be vector or scalar}
+\item{varss}{Boolean, whether to fit a VARSS model (defaults to true) or VAR model}
 
-\item{b_sd_diag}{Prior sd for diagonal elements. Can be vector or scalar}
+\item{b_diag}{A 2 element list specifying the mean and sd of a normal prior on the diagonal elements.
+These elements are \code{mu} (default= 0.7) and \code{sd} (default = 1)}
 
-\item{b_mu}{Prior mean for off diagonal elements, when Normal priors used.
-Can be vector or scalar, defaults to 0}
-
-\item{b_sd}{Prior sd for off diagonal elements, when Normal priors used.
-Can be vector or scalar, defaults to 1}
+\item{b_offdiag}{A 2 element list specifying the mean and sd of a normal prior on the off-diagonal elements.
+These elements are \code{mu} (default= 0) and \code{sd} (default = 1)}
 
 \item{off_diag_prior}{Character string denoting which prior to use for
 off-diagonal elements. Can be "normal" (independent priors estimated for each)
@@ -71,29 +64,29 @@ estimated standard deviation), "student-t" (hierarchical student-t model used wi
 and df), "laplace" (double-exponential model used with estimated scale) or
 "hs" (regularized horseshoe prior used, following parameterization in rstanarm)}
 
-\item{prior_sigma_pro_mu}{Optional, prior mean for for process variance scale. The
-prior is a Student-t, with default mu = 0}
+\item{sigma_pro}{A 2 element list specifying the mean and sd of a half Student-t prior on the process
+variance standard deviation. Elements of the list are \code{mu} (default= 0) and \code{sd} (default = 1), and the
+prior df is fixed at 3}
 
-\item{prior_sigma_pro_sd}{Optional, prior standard deviation for process variance scale. The
-prior is a Student-t, with default sd = 2}
-
-\item{prior_sigma_obs_mu}{Optional, prior mean for for observation variance scale. The
-prior is a Student-t, with default mu = 0}
-
-\item{prior_sigma_obs_sd}{Optional, prior standard deviation for observation variance scale. The
-prior is a Student-t, with default sd = 2}
+\item{sigma_obs}{A 2 element list specifying the mean and sd of a half Student-t prior on the process
+variance standard deviation. Elements of the list are \code{mu} (default= 0) and \code{sd} (default = 1), and the
+prior df is fixed at 3}
 
 \item{nu}{Optional known parameter (df) for Student-t priors}
 
-\item{sigma_scale_df}{Degrees of freedom for Student-t prior on scaling variance for Student-t and Laplace models, defaults to 3}
+\item{sigma_scale}{A 2 element list specifying the \code{df} and \code{sd} parameters for a
+half Student-t prior on the scale parameter. This is only used for the Laplace and Student-t priors;
+default values are 3 for \code{df} and 2 for \code{sd}}
 
-\item{sigma_scale_sd}{Standard deviation for Student-t prior on scaling variance for Student-t and Laplace models, defaults to 2}
+\item{hs}{A list containing the hyperparameters of the horseshoe prior. Default values
+are \code{df} (df of the Student-t prior for local shrinkage, defaults to 1),
+\code{df_global} (Student-t df of the global shrinkage, defaults to 1),
+\code{df_slab} (df of the Student-t prior on the slab regularization, defaults to 4),
+\code{scale_global} (Scale for Student-t prior on global shrinkage, defaults to 1),
+\code{scale_slab} (Scale of the Student-t prior on shrikage parameter, defaults to 2).}
 
-\item{global_scale}{scale parameter for regularized horseshoe prior, defaults to 0.1}
-
-\item{slab_scale}{scale parameter for regularized horseshoe prior, defaults to 2.5}
-
-\item{slab_df}{df parameter for regularized horseshoe prior, defaults to 4}
+\item{unique_reg}{Boolean, whether to estimate unique regularization parameters for the Student-t or Laplace
+models (defaults to false)}
 
 \item{pars_to_monitor}{Optional string vector of which parameters to monitor. By default this is
 NULL and only most important parameters are monitored (variances, B matrix, etc). This can be

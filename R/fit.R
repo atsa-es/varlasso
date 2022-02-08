@@ -13,32 +13,35 @@
 #' where observation error variances are not estimated. Defaults to NULL, and them being
 #' estimated. Cannot be set to zero.
 #' @param est_trend Whether or not to estimate a species-specific trend, defaults to FALSE
-#' @param b_mu_diag Prior mean for diagonal elements. Can be vector or scalar
-#' @param b_sd_diag Prior sd for diagonal elements. Can be vector or scalar
-#' @param b_mu Prior mean for off diagonal elements, when Normal priors used.
-#' Can be vector or scalar, defaults to 0
-#' @param b_sd Prior sd for off diagonal elements, when Normal priors used.
-#' Can be vector or scalar, defaults to 1
+#' @param varss Boolean, whether to fit a VARSS model (defaults to true) or VAR model
+#' @param b_diag A 2 element list specifying the mean and sd of a normal prior on the diagonal elements.
+#' These elements are `mu` (default= 0.7) and `sd` (default = 1)
+#' @param b_offdiag A 2 element list specifying the mean and sd of a normal prior on the off-diagonal elements.
+#' These elements are `mu` (default= 0) and `sd` (default = 1)
 #' @param off_diag_prior Character string denoting which prior to use for
 #' off-diagonal elements. Can be "normal" (independent priors estimated for each)
 #' parameter, "normal_pp" (normal prior with partial pooling, where model is hierarchical with an
 #' estimated standard deviation), "student-t" (hierarchical student-t model used with estimated scale
 #' and df), "laplace" (double-exponential model used with estimated scale) or
 #' "hs" (regularized horseshoe prior used, following parameterization in rstanarm)
-#' @param prior_sigma_pro_mu Optional, prior mean for for process variance scale. The
-#' prior is a Student-t, with default mu = 0
-#' @param prior_sigma_pro_sd Optional, prior standard deviation for process variance scale. The
-#' prior is a Student-t, with default sd = 2
-#' @param prior_sigma_obs_mu Optional, prior mean for for observation variance scale. The
-#' prior is a Student-t, with default mu = 0
-#' @param prior_sigma_obs_sd Optional, prior standard deviation for observation variance scale. The
-#' prior is a Student-t, with default sd = 2
+#' @param sigma_pro A 2 element list specifying the mean and sd of a half Student-t prior on the process
+#' variance standard deviation. Elements of the list are `mu` (default= 0) and `sd` (default = 1), and the
+#' prior df is fixed at 3
+#' @param sigma_obs A 2 element list specifying the mean and sd of a half Student-t prior on the process
+#' variance standard deviation. Elements of the list are `mu` (default= 0) and `sd` (default = 1), and the
+#' prior df is fixed at 3
 #' @param nu Optional known parameter (df) for Student-t priors
-#' @param sigma_scale_df Degrees of freedom for Student-t prior on scaling variance for Student-t and Laplace models, defaults to 3
-#' @param sigma_scale_sd Standard deviation for Student-t prior on scaling variance for Student-t and Laplace models, defaults to 2
-#' @param global_scale scale parameter for regularized horseshoe prior, defaults to 0.1
-#' @param slab_scale scale parameter for regularized horseshoe prior, defaults to 2.5
-#' @param slab_df df parameter for regularized horseshoe prior, defaults to 4
+#' @param sigma_scale A 2 element list specifying the `df` and `sd` parameters for a
+#' half Student-t prior on the scale parameter. This is only used for the Laplace and Student-t priors;
+#' default values are 3 for `df` and 2 for `sd`
+#' @param hs A list containing the hyperparameters of the horseshoe prior. Default values
+#' are `df` (df of the Student-t prior for local shrinkage, defaults to 1),
+#' `df_global` (Student-t df of the global shrinkage, defaults to 1),
+#' `df_slab` (df of the Student-t prior on the slab regularization, defaults to 4),
+#' `scale_global` (Scale for Student-t prior on global shrinkage, defaults to 1),
+#' `scale_slab` (Scale of the Student-t prior on shrikage parameter, defaults to 2).
+#' @param unique_reg Boolean, whether to estimate unique regularization parameters for the Student-t or Laplace
+#' models (defaults to false)
 #' @param pars_to_monitor Optional string vector of which parameters to monitor. By default this is
 #' NULL and only most important parameters are monitored (variances, B matrix, etc). This can be
 #' the word "all", in which case all parameters are saved (this may be good for
@@ -125,21 +128,20 @@ fit <- function(data,
                 shared_r = NULL,
                 fixed_r = NULL,
                 est_trend = FALSE,
-                b_mu_diag = 0.7,
-                b_sd_diag = 1,
-                b_mu = 0,
-                b_sd = 1,
+                varss = TRUE,
+                b_diag = list(mu = 0.7, sd =1),
+                b_offdiag = list(mu = 0, sd = 1),
                 off_diag_prior = c("normal", "student-t", "laplace", "hs","normal_pp"),
-                prior_sigma_pro_mu = 0,
-                prior_sigma_pro_sd = 2,
-                prior_sigma_obs_mu = 0,
-                prior_sigma_obs_sd = 2,
+                sigma_pro = list(mu = 0, sd = 1),
+                sigma_obs = list(mu = 0, sd = 1),
                 nu = NULL,
-                sigma_scale_df = 3,
-                sigma_scale_sd = 2,
-                global_scale = 0.1,
-                slab_scale = 2.5,
-                slab_df = 4,
+                sigma_scale = list(df = 3, sd = 2),
+                hs = list(df = 1,
+                                df_global = 1,
+                                df_slab = 4,
+                                scale_global = 1,
+                                scale_slab = 2),
+                unique_reg = FALSE,
                 pars_to_monitor = NULL,
                 iter = 1000,
                 warmup = floor(iter / 2),
@@ -197,32 +199,32 @@ fit <- function(data,
   }
 
   # make sure priors are in right form
-  if (length(b_mu_diag) %in% c(1, n_spp) == FALSE) {
+  if (length(b_diag$mu) %in% c(1, n_spp) == FALSE) {
     stop("Error: mean on diagonal for B (b_mu_diag) needs to be a scalar or vector whose length is the number of species")
   } else {
-    if (length(b_mu_diag) == 1) {
-      b_mu_diag <- rep(b_mu_diag, n_spp)
+    if (length(b_diag$mu) == 1) {
+      b_diag$mu <- rep(b_diag$mu, n_spp)
     }
   }
-  if (length(b_sd_diag) %in% c(1, n_spp) == FALSE) {
+  if (length(b_diag$sd) %in% c(1, n_spp) == FALSE) {
     stop("Error: sd on diagonal for B (b_sd_diag) needs to be a scalar or vector whose length is the number of species")
   } else {
-    if (length(b_sd_diag) == 1) {
-      b_sd_diag <- rep(b_sd_diag, n_spp)
+    if (length(b_diag$sd) == 1) {
+      b_diag$sd <- rep(b_diag$sd, n_spp)
     }
   }
-  if (length(b_mu) %in% c(1, n_off) == FALSE) {
+  if (length(b_offdiag$mu) %in% c(1, n_off) == FALSE) {
     stop("Error: mean on off diagonal for B (b_mu) needs to be a scalar or vector whose length is n_species * (n_species - 1)")
   } else {
-    if (length(b_mu) == 1) {
-      b_mu <- rep(b_mu, n_off)
+    if (length(b_offdiag$mu) == 1) {
+      b_offdiag$mu <- rep(b_offdiag$mu, n_off)
     }
   }
-  if (length(b_sd) %in% c(1, n_off) == FALSE) {
+  if (length(b_offdiag$sd) %in% c(1, n_off) == FALSE) {
     stop("Error: sd on off diagonal for B (b_sd) needs to be a scalar or vector whose length is n_species * (n_species - 1)")
   } else {
-    if (length(b_sd) == 1) {
-      b_sd <- rep(b_sd, n_off)
+    if (length(b_offdiag$sd) == 1) {
+      b_offdiag$sd <- rep(b_offdiag$sd, n_off)
     }
   }
 
@@ -270,22 +272,26 @@ fit <- function(data,
     species_index = data$species,
     yy = data$y,
     rc_off = rc_off,
-    b_mu = b_mu,
-    b_sd = b_sd,
-    b_mu_diag = b_mu_diag,
-    b_sd_diag = b_sd_diag,
+    b_mu = b_offdiag$mu,
+    b_sd = b_offdiag$sd,
+    b_mu_diag = b_diag$mu,
+    b_sd_diag = b_diag$sd,
     nu_known = nu_known,
-    sigma_proc_sd = prior_sigma_pro_sd,
-    sigma_proc_mu = prior_sigma_pro_mu,
-    sigma_obs_sd = prior_sigma_obs_sd,
-    sigma_obs_mu = prior_sigma_obs_mu,
+    sigma_proc_sd = sigma_pro$sd,
+    sigma_proc_mu = sigma_pro$mu,
+    sigma_obs_sd = sigma_obs$sd,
+    sigma_obs_mu = sigma_obs$mu,
     off_diag_priors = off_diag_priors,
-    sigma_scale_df = sigma_scale_df,
-    sigma_scale_sd = sigma_scale_sd,
-    global_scale = global_scale,
-    slab_scale = slab_scale,
-    slab_df = slab_df,
-    priors_only = as.numeric(prior_only)
+    sigma_scale_df = sigma_scale$df,
+    sigma_scale_sd = sigma_scale$sd,
+    hs_df = hs$df,
+    hs_df_global=hs$df_global,
+    hs_df_slab=hs$df_slab,
+    hs_scale_global=hs$scale_global,
+    hs_scale_slab=hs$scale_slab,
+    priors_only = as.numeric(prior_only),
+    est_process = as.numeric(varss),
+    est_unique_reg = as.numeric(unique_reg)
   )
 
   pars <- c("sigma_proc", "Bmat", "x0")
@@ -304,7 +310,7 @@ fit <- function(data,
     pars <- c(pars, "lambda2")
   }
   if (off_diag_priors == 3) {
-    pars <- c(pars, "c2_hs", "lambda")
+    pars <- c(pars, "hs_global", "hs_local", "hs_slab")
   }
 
   if (!is.null(pars_to_monitor)) {
