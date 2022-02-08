@@ -129,10 +129,18 @@ transformed parameters {
      }
   }
   if(off_diag_priors == 1) {
-     Boffd = sigma_scale * sqrt(lambda2[1]) * B_z;
+    if(est_unique_reg ==1) {
+      Boffd = sigma_scale * sqrt(lambda2) .* B_z;
+    } else {
+      Boffd = sigma_scale * sqrt(lambda2[1]) * B_z;
+    }
   }
   if(off_diag_priors == 2) {
-    Boffd = sigma_scale * sqrt(lambda2) .* B_z;
+    if(est_unique_reg == 1) {
+      Boffd = sigma_scale * sqrt(lambda2) .* B_z;
+    } else {
+      Boffd = sigma_scale * sqrt(lambda2[1]) * B_z;
+    }
   }
   if(off_diag_priors == 3) {
     Boffd = horseshoe(B_z, hs_local, hs_global[1], hs_scale_slab^2 * hs_slab[1]);
