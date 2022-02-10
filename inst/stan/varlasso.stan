@@ -137,9 +137,9 @@ transformed parameters {
   }
   if(off_diag_priors == 2) {
     if(est_unique_reg == 1) {
-      Boffd = sigma_scale * sqrt(lambda2) .* B_z;
+      Boffd = sqrt(lambda2) .* B_z;
     } else {
-      Boffd = sigma_scale * sqrt(lambda2[1]) * B_z;
+      Boffd = sqrt(lambda2[1]) * B_z;
     }
   }
   if(off_diag_priors == 3) {
@@ -228,13 +228,13 @@ model {
 
     // this parameterization is in Stan manual, Ding and Blitzstein 2018
     // a ~ exp(1/(2*sigma2)) B|a ~ N(0, sqrt(a))
+    B_z ~ std_normal();
+    //sigma_scale ~ student_t(sigma_scale_df,0,sigma_scale_sd);
+    lambda2 ~ exponential(0.5 * (1.0 / pow(sigma_scale_sd,2)));
+
     //B_z ~ std_normal();
     //sigma_scale ~ student_t(sigma_scale_df,0,sigma_scale_sd);
-    //lambda2 ~ exponential(0.5 * (1.0 / pow(sigma_scale,2)));
-
-    B_z ~ std_normal();
-    sigma_scale ~ student_t(sigma_scale_df,0,sigma_scale_sd);
-    lambda2 ~ exponential(0.5);
+    //lambda2 ~ exponential(0.5);
     //     // vector
     //sigma_scale ~ student_t(sigma_scale_df,0,sigma_scale_sd);
     //B_z ~ double_exponential(0, sigma_scale);

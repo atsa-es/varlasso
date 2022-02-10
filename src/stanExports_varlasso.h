@@ -998,10 +998,10 @@ public:
                 current_statement_begin__ = 139;
                 if (as_bool(logical_eq(est_unique_reg, 1))) {
                     current_statement_begin__ = 140;
-                    stan::math::assign(Boffd, elt_multiply(multiply(sigma_scale, stan::math::sqrt(lambda2)), B_z));
+                    stan::math::assign(Boffd, elt_multiply(stan::math::sqrt(lambda2), B_z));
                 } else {
                     current_statement_begin__ = 142;
-                    stan::math::assign(Boffd, multiply((sigma_scale * stan::math::sqrt(get_base1(lambda2, 1, "lambda2", 1))), B_z));
+                    stan::math::assign(Boffd, multiply(stan::math::sqrt(get_base1(lambda2, 1, "lambda2", 1)), B_z));
                 }
             }
             current_statement_begin__ = 145;
@@ -1197,12 +1197,10 @@ public:
             }
             current_statement_begin__ = 224;
             if (as_bool(logical_eq(off_diag_priors, 2))) {
-                current_statement_begin__ = 235;
+                current_statement_begin__ = 231;
                 lp_accum__.add(std_normal_log<propto__>(B_z));
-                current_statement_begin__ = 236;
-                lp_accum__.add(student_t_log<propto__>(sigma_scale, sigma_scale_df, 0, sigma_scale_sd));
-                current_statement_begin__ = 237;
-                lp_accum__.add(exponential_log<propto__>(lambda2, 0.5));
+                current_statement_begin__ = 233;
+                lp_accum__.add(exponential_log<propto__>(lambda2, (0.5 * (1.0 / pow(sigma_scale_sd, 2)))));
             }
             current_statement_begin__ = 242;
             if (as_bool(logical_eq(off_diag_priors, 3))) {
@@ -1513,10 +1511,10 @@ public:
                 current_statement_begin__ = 139;
                 if (as_bool(logical_eq(est_unique_reg, 1))) {
                     current_statement_begin__ = 140;
-                    stan::math::assign(Boffd, elt_multiply(multiply(sigma_scale, stan::math::sqrt(lambda2)), B_z));
+                    stan::math::assign(Boffd, elt_multiply(stan::math::sqrt(lambda2), B_z));
                 } else {
                     current_statement_begin__ = 142;
-                    stan::math::assign(Boffd, multiply((sigma_scale * stan::math::sqrt(get_base1(lambda2, 1, "lambda2", 1))), B_z));
+                    stan::math::assign(Boffd, multiply(stan::math::sqrt(get_base1(lambda2, 1, "lambda2", 1)), B_z));
                 }
             }
             current_statement_begin__ = 145;
