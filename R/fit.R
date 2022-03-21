@@ -295,7 +295,7 @@ fit <- function(data,
   )
 
   pars <- c("sigma_proc", "Bmat", "x0")
-  if (sum(fixed_r) == 0) pars <- c(pars,"sigma_obs")
+  if (sum(fixed_r) != 0) pars <- c(pars,"sigma_obs")
   if (save_log_lik == TRUE) pars <- c(pars, "log_lik")
   if (est_trend == TRUE) pars <- c(pars, "U")
   if (off_diag_priors > 0) pars <- c(pars, "sigma_scale")
