@@ -62,6 +62,7 @@ transformed data {
   int est_sigma_obs;
   int unique_reg;
   real dummy;
+  int est_sigma_scale;
   matrix[n_spp,n_time] ymat;  // matrix of y for VAR model
   // initialize
   est_nu = 0;
@@ -69,14 +70,18 @@ transformed data {
   est_lambda = 0;
   est_sigma_obs = 1; // by default, estimate it
   dummy = 0; // for sampling from priors
+  est_sigma_scale = 0;
   // indicators
   if(off_diag_priors==1) {
     est_nu = 1;
     if(nu_known > 0) est_nu = 0;
+    est_lambda = 1;
+    est_sigma_scale = 1;
   }
-  if(off_diag_priors==1) est_lambda = 1;
   if(off_diag_priors==2) est_lambda = 1;
   if(off_diag_priors==3) est_hs = 1;
+  if(off_diag_priors==4) est_sigma_scale = 1;
+
   for(i in 1:n_spp) {
     if(fixed_r[i] != 0) est_sigma_obs = 0;
   }
@@ -99,7 +104,7 @@ transformed data {
 }
 parameters {
   real<lower=0> sigma_obs[est_sigma_obs * n_r];
-  real<lower=0> sigma_scale; // variance for shrinkage / hierarchical B off diags
+  vector<lower=0>[est_sigma_scale] sigma_scale; // variance for shrinkage / hierarchical B off diags
   vector[n_off] B_z;  // off-diags of B, in normal (0,1) space
   vector<lower=0,upper=1>[n_spp] Bdiag;   // diag of B
   vector[n_spp] x0;
@@ -130,9 +135,9 @@ transformed parameters {
   }
   if(off_diag_priors == 1) {
     if(est_unique_reg ==1) {
-      Boffd = sigma_scale * sqrt(lambda2) .* B_z;
+      Boffd = sigma_scale[1] * sqrt(lambda2) .* B_z;
     } else {
-      Boffd = sigma_scale * sqrt(lambda2[1]) * B_z;
+      Boffd = sigma_scale[1] * sqrt(lambda2[1]) * B_z;
     }
   }
   if(off_diag_priors == 2) {
@@ -147,7 +152,7 @@ transformed parameters {
   }
   if(off_diag_priors == 4) {
      //Normal priors with sd estimated
-     Boffd = B_z*sigma_scale;
+     Boffd = B_z*sigma_scale[1];
   }
 
   // construct B matrix, starting with diagonal
