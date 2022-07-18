@@ -12,6 +12,7 @@ fit(
   est_trend = FALSE,
   varss = TRUE,
   b_diag = list(mu = 0.7, sd = 1),
+  b_diag_min = 0,
   b_offdiag = list(mu = 0, sd = 1),
   off_diag_prior = c("normal", "student-t", "laplace", "hs", "normal_pp"),
   sigma_pro = list(mu = 0, sd = 1),
@@ -53,6 +54,9 @@ estimated. Cannot be set to zero.}
 
 \item{b_diag}{A 2 element list specifying the mean and sd of a normal prior on the diagonal elements.
 These elements are \code{mu} (default= 0.7) and \code{sd} (default = 1)}
+
+\item{b_diag_min}{The minimum value of the B diagonal, defaults to 0. Setting this lower,
+e.g. -1, allows for oscillations}
 
 \item{b_offdiag}{A 2 element list specifying the mean and sd of a normal prior on the off-diagonal elements.
 These elements are \code{mu} (default= 0) and \code{sd} (default = 1)}

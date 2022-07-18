@@ -16,6 +16,8 @@
 #' @param varss Boolean, whether to fit a VARSS model (defaults to true) or VAR model
 #' @param b_diag A 2 element list specifying the mean and sd of a normal prior on the diagonal elements.
 #' These elements are `mu` (default= 0.7) and `sd` (default = 1)
+#' @param b_diag_min The minimum value of the B diagonal, defaults to 0. Setting this lower,
+#' e.g. -1, allows for oscillations
 #' @param b_offdiag A 2 element list specifying the mean and sd of a normal prior on the off-diagonal elements.
 #' These elements are `mu` (default= 0) and `sd` (default = 1)
 #' @param off_diag_prior Character string denoting which prior to use for
@@ -130,6 +132,7 @@ fit <- function(data,
                 est_trend = FALSE,
                 varss = TRUE,
                 b_diag = list(mu = 0.7, sd =1),
+                b_diag_min = 0,
                 b_offdiag = list(mu = 0, sd = 1),
                 off_diag_prior = c("normal", "student-t", "laplace", "hs","normal_pp"),
                 sigma_pro = list(mu = 0, sd = 1),
@@ -276,6 +279,7 @@ fit <- function(data,
     b_sd = b_offdiag$sd,
     b_mu_diag = b_diag$mu,
     b_sd_diag = b_diag$sd,
+    b_diag_min = b_diag_min,
     nu_known = nu_known,
     sigma_proc_sd = sigma_pro$sd,
     sigma_proc_mu = sigma_pro$mu,

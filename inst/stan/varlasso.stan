@@ -32,6 +32,7 @@ data {
   real yy[n_pos];       // data
   //real b_mu[n_off]; // prior on mean of offdiagonal
   real b_sd[n_off]; // prior on sd offdiagonal
+  real b_diag_min; // minimum value of estimated B diag
   real b_mu_diag[n_spp];// prior on mean of diagonal
   real b_sd_diag[n_spp];// prior on sd of diagonal
   real fixed_r[n_spp]; // fixed_r is optional, will be all 0s if estimated
@@ -106,7 +107,7 @@ parameters {
   real<lower=0> sigma_obs[est_sigma_obs * n_r];
   vector<lower=0>[est_sigma_scale] sigma_scale; // variance for shrinkage / hierarchical B off diags
   vector[n_off] B_z;  // off-diags of B, in normal (0,1) space
-  vector<lower=0,upper=1>[n_spp] Bdiag;   // diag of B
+  vector<lower=b_diag_min,upper=1>[n_spp] Bdiag;   // diag of B
   vector[n_spp] x0;
   vector[est_trend*n_spp] U;
   vector<lower=2>[est_nu] nu; // student-t df parameters for Student-t priors
