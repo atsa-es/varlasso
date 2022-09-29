@@ -17,6 +17,11 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{r eval = FALSE}
+remotes::install_github("atsa-es/varlasso")
+```
+
+
 ```{r packages, message=FALSE, warning=TRUE}
 library(varlasso)
 ```

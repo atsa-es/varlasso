@@ -87,6 +87,8 @@
     
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"atsa-es/varlasso"</span><span class="op">)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://nwfsc-timeseries.github.io/varlasso/" class="external-link">varlasso</a></span><span class="op">)</span></code></pre></div>
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
@@ -101,7 +103,7 @@
 <h2 id="simulating-data-from-a-var-model">Simulating data from a VAR model<a class="anchor" aria-label="anchor" href="#simulating-data-from-a-var-model"></a>
 </h2>
 <p>We can fit a VAR model to simulated data</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">iter</span> <span class="op">&lt;-</span> <span class="fl">50</span> <span class="co"># MCMC iterations, make this much larger</span>
 <span class="va">warmup</span> <span class="op">&lt;-</span> <span class="fl">20</span> <span class="co"># MCMC warmup, make this much larger</span>
 <span class="va">thin</span> <span class="op">&lt;-</span> <span class="fl">1</span>
@@ -143,13 +145,13 @@
 </tr>
 </tbody></table>
 <p>Next we can simulate the evolution of the states,</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">2</span><span class="op">:</span><span class="va">n_time</span><span class="op">)</span> <span class="op">{</span> <span class="co"># simualte evolution of states</span>
   <span class="va">xx</span><span class="op">[</span><span class="va">i</span>, <span class="op">]</span> <span class="op">&lt;-</span> <span class="va">B</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="va">xx</span><span class="op">[</span><span class="va">i</span> <span class="op">-</span> <span class="fl">1</span>, <span class="op">]</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_ts</span>, mean <span class="op">=</span> <span class="fl">0</span>, sd <span class="op">=</span> <span class="fl">0.04</span><span class="op">)</span>
 <span class="op">}</span>
 <span class="va">xx</span> <span class="op">&lt;-</span> <span class="va">xx</span><span class="op">[</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="va">n_burn</span><span class="op">)</span>, <span class="op">]</span> <span class="co"># drop burn in data</span></code></pre></div>
 <p>Finally we can add observation error noise</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">yy</span> <span class="op">&lt;-</span> <span class="va">xx</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">xx</span><span class="op">)</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">xx</span><span class="op">)</span>, mean <span class="op">=</span> <span class="fl">0</span>, sd <span class="op">=</span> <span class="fl">0.02</span><span class="op">)</span>
 <span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>
   <span class="st">"time"</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">yy</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">yy</span><span class="op">)</span><span class="op">)</span>,
@@ -169,14 +171,14 @@
 <h2 id="fitting-a-model-and-optional-arguments">Fitting a model (and optional arguments)<a class="anchor" aria-label="anchor" href="#fitting-a-model-and-optional-arguments"></a>
 </h2>
 <p>We can fit a model to this data using the <code><a href="../reference/fit.html">varlasso::fit</a></code> function, which at a minimum takes in the dataframe and MCMC parameters.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit.html">fit</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">df</span>, 
          chains <span class="op">=</span> <span class="va">chains</span>, 
          iter <span class="op">=</span> <span class="va">iter</span>, 
          warmup <span class="op">=</span> <span class="va">warmup</span>, 
          thin <span class="op">=</span> <span class="va">thin</span><span class="op">)</span></code></pre></div>
 <p>There are a few optional arguments that may be applied to this or any model. The <code>shared_q</code> and <code>shared_r</code> arguments can be used to pass in vectors indicating which process error or observation error variances may be shared across time series. By default, all variances are shared across time series. In the example below, process variances are shared among the 1st and 4th time series, and unique for time series 2 and 3. Similarly for the observation error variances, time series 1 and 4 have equal variances and time series 2 and 3 have equal variances.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit.html">fit</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">df</span>, 
          chains <span class="op">=</span> <span class="va">chains</span>, 
          shared_q <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">3</span>,<span class="fl">1</span><span class="op">)</span>,
@@ -185,7 +187,7 @@
          warmup <span class="op">=</span> <span class="va">warmup</span>, 
          thin <span class="op">=</span> <span class="va">thin</span><span class="op">)</span></code></pre></div>
 <p>In some cases, it may be desireable to fix observation variances; this can be done using the <code>fixed_r</code> argument. The <code>fixed_r</code> argument can be a vector of fixed values, or alternatively a single scalar.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit.html">fit</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">df</span>, 
          chains <span class="op">=</span> <span class="va">chains</span>, 
          fixed_r <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.2</span>, <span class="fl">0.2</span>, <span class="fl">0.1</span><span class="op">)</span>,
@@ -193,7 +195,7 @@
          warmup <span class="op">=</span> <span class="va">warmup</span>, 
          thin <span class="op">=</span> <span class="va">thin</span><span class="op">)</span></code></pre></div>
 <p>For some cases, we may also want to ignore the trend <span class="math inline">\(\mathbf{u}\)</span>. This can be turned on / off using the <code>est_trend</code> argument</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit.html">fit</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">df</span>, 
          chains <span class="op">=</span> <span class="va">chains</span>, 
          est_trend <span class="op">=</span> <span class="cn">FALSE</span>,
@@ -201,7 +203,7 @@
          warmup <span class="op">=</span> <span class="va">warmup</span>, 
          thin <span class="op">=</span> <span class="va">thin</span><span class="op">)</span></code></pre></div>
 <p>Finally, observation error can be turned on / off using the <code>varss</code> argument. When FALSE, a VAR model is constructed, and if TRUE a VARSS model is fit.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit.html">fit</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">df</span>, 
          chains <span class="op">=</span> <span class="va">chains</span>, 
          varss <span class="op">=</span> <span class="cn">FALSE</span>,
@@ -215,7 +217,7 @@
 </h2>
 <p>Many VAR or VARSS models struggle as the number of time series increases, because of the dimensionality of the interaction matrix <span class="math inline">\(\mathbf{B}\)</span>. The <code>varlasso</code> in this package allows models with alternative priors on the diagonal and off-diagonal elements. By default, these priors are</p>
 <p><span class="math display">\[\mathbf{B_{i,i}} \sim N(0.7, 1)\]</span> and <span class="math display">\[\mathbf{B_{i,j}} \sim N(0, 1)\]</span> These priors may be specified by changing the arguments <code>b_diag</code> and <code>b_offdiag</code>.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit.html">fit</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">df</span>, 
          chains <span class="op">=</span> <span class="va">chains</span>, 
          b_diag <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>mu <span class="op">=</span> <span class="fl">0.3</span>, sd <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,
@@ -230,7 +232,7 @@
 <p>The <code>varlasso</code> package currently only allows for normal priors on the diagonal elements. But because the number of off-diagonal elements can become prohibitively large to work with, we allow for a number of shrinkage priors. These can be changed by using the <code>off_diag_prior</code> argument (defaults to ‘normal’).</p>
 <p>As a first option, we may use a partial pooling prior (or hierarchical prior) that estimates a standard deviation, e.g.</p>
 <p><span class="math display">\[\mathbf{B_{i,i}} \sim N(0.7, \sigma_{B})\]</span> This prior can be specified using the following</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit.html">fit</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">df</span>, 
          chains <span class="op">=</span> <span class="va">chains</span>, 
          off_diag_prior <span class="op">=</span> <span class="st">"normal_pp"</span>,
@@ -239,7 +241,7 @@
          thin <span class="op">=</span> <span class="va">thin</span><span class="op">)</span></code></pre></div>
 <p>Second, we might want to include more extremes in the tails than a normal prior, so instead a Student t-distribution can be included,</p>
 <p><span class="math display">\[\mathbf{B_{i,i}} \sim Student-t(0.7, \sigma_{B}, \nu)\]</span> where <span class="math inline">\(\nu\)</span> is included as an estimated degrees of freedom parameter. This prior is specified by setting <code>off_diag_prior</code> to “student_t”. The <span class="math inline">\(\nu\)</span> parameter can also be optionally fixed with the <code>nu</code> argument, e.g.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit.html">fit</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">df</span>, 
          chains <span class="op">=</span> <span class="va">chains</span>, 
          nu <span class="op">=</span> <span class="fl">5</span>,
@@ -249,7 +251,7 @@
          thin <span class="op">=</span> <span class="va">thin</span><span class="op">)</span></code></pre></div>
 <p>As a third prior, we include the Laplace prior (this is also known as a double exponential distribution). This prior has an estimated scale parameter, and is specified with the chunk below</p>
 <p><span class="math display">\[\mathbf{B_{i,i}} \sim Laplace(0, \sigma_{B})\]</span></p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit.html">fit</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">df</span>, 
          chains <span class="op">=</span> <span class="va">chains</span>, 
          nu <span class="op">=</span> <span class="fl">5</span>,
@@ -272,13 +274,13 @@
 <li>
 <code>scale_slab</code> Scale of the Student-t prior on shrinkage</li>
 </ul>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">fit</span>(<span class="at">data =</span> df, </span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>         <span class="at">chains =</span> chains, </span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">off_diag_prior =</span> <span class="st">"hs"</span>,</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">hs =</span> <span class="fu">list</span>(<span class="at">df =</span> <span class="dv">1</span>, <span class="at">df_global =</span> <span class="dv">1</span>, <span class="at">df_slab =</span> <span class="dv">4</span>, <span class="at">scale_global =</span> <span class="dv">1</span>, <span class="at">scale_slab =</span> <span class="dv">2</span>)</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">iter =</span> iter, </span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">warmup =</span> warmup, </span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">thin =</span> thin)</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">fit</span>(<span class="at">data =</span> df, </span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>         <span class="at">chains =</span> chains, </span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">off_diag_prior =</span> <span class="st">"hs"</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">hs =</span> <span class="fu">list</span>(<span class="at">df =</span> <span class="dv">1</span>, <span class="at">df_global =</span> <span class="dv">1</span>, <span class="at">df_slab =</span> <span class="dv">4</span>, <span class="at">scale_global =</span> <span class="dv">1</span>, <span class="at">scale_slab =</span> <span class="dv">2</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">iter =</span> iter, </span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">warmup =</span> warmup, </span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">thin =</span> thin)</span></code></pre></div>
 </div>
   </div>
 

@@ -75,12 +75,32 @@
 
       </header><div class="row">
   <div class="contents col-md-9">
-<div class="section level1">
-<div class="page-header"><h1 id="varlasso">varlasso<a class="anchor" aria-label="anchor" href="#varlasso"></a>
-</h1></div>
-<p>Repo for fitting Bayesian VAR models with shrinkage on coefficient estimates</p>
+
+<div class="section level2">
+<h2 id="varlasso-package">varlasso package<a class="anchor" aria-label="anchor" href="#varlasso-package"></a>
+</h2>
+<p>This repo includes an R package for fitting Bayesian Cector Autoregressive (VAR) models with optional shrinkage priors on coefficient estimates</p>
+<p>Documentation for the package is here: <a href="https://atsa-es.github.io/varlasso/" class="external-link">https://atsa-es.github.io/varlasso/</a></p>
+<p>This work extends the MARSS package (which provides similar models in a maximum likelihood setting). MARSS: <a href="https://cran.r-project.org/web/packages/MARSS/index.html" class="external-link">https://cran.r-project.org/web/packages/MARSS/index.html</a></p>
+<p>And more material can be found on our Applied Time Series website, <a href="https://atsa-es.github.io/" class="external-link">https://atsa-es.github.io/</a></p>
+</div>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
+<p>To install the package, use</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># install.packages("remotes")</span>
+<span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"atsa-es/varlasso"</span><span class="op">)</span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="citations">Citations<a class="anchor" aria-label="anchor" href="#citations"></a>
+</h2>
+<p>A paper describing applications of these methods to VAR problems is in PeerJ,</p>
+<p>Ward, E.J., K.N. Marshall, and M.D. Scheuerell. 2022. Regularizing priors for Bayesian VAR applications to large ecological datasets, <em>PeerJ</em></p>
+<p>And the citation for this repository is</p>
 <p><a href="https://zenodo.org/badge/latestdoi/360700576" class="external-link"><img src="https://zenodo.org/badge/360700576.svg" alt="DOI"></a></p>
 </div>
+
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
