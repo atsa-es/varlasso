@@ -1,0 +1,227 @@
+---
+title: "Examples using the varlasso package"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Examples using the varlasso package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE, cache=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.asp = 0.618
+)
+```
+
+```{r packages, message=FALSE, warning=TRUE}
+library(varlasso)
+```
+
+## Overview
+
+The `varlasso` R package is designed to fit vector autoregressive (VAR) models, with and without observation error in a Bayesian setting. The basic formulation of these types of models consists of a process model describing the latent time series in $\mathbf{x_{t}}$, 
+
+$$\mathbf{x_{t}} = \mathbf{Bx_{t-1}} + \mathbf{u} + \mathbf{w_{t-1}}$$
+where $\mathbf{Bx_{t-1}}$ is a matrix of coefficients describing interactions among time series, $\mathbf{u}$ is an optional trend, and $\mathbf{w_{t-1}}$ is a vector of deviations from a multivariate normal distribution, $\mathbf{w_{t}} \sim MVN(\mathbf{0}, \mathbf{Q})$. The covariance matrix $\mathbf{Q}$ may be an identity matrix or include estimated covariance between time series.  
+
+In the context of ecological examples using the VAR approach (sometimes called multivariate autoregressive or MAR models), the $\mathbf{x_{t}}$ can be viewed as log-abundances of different species, and the $\mathbf{B}$ matrix a matrix of interactions. Diagonals of the $\mathbf{B}$ matrix represent density dependence, and off-diagonals represent interspecific interactions. 
+
+The other component of a VAR model is optionally observation errors. To avoid confusion, we refer to the model with observation error as a VARSS (Vector Autoregressive State Space) model. The observation model can be written as 
+
+$$\mathbf{y_{t}} \sim MVN(\mathbf{x_{t}}, \mathbf{R})$$
+where $\mathbf{R}$ is a covariance matrix of the observation errors. 
+
+## Simulating data from a VAR model
+
+We can fit a VAR model to simulated data
+
+```{r}
+iter <- 50 # MCMC iterations, make this much larger
+warmup <- 20 # MCMC warmup, make this much larger
+thin <- 1
+chains <- 1 # MCMC chains, make this 3 or 4
+
+n_ts <- 4 # number of time series to simulate
+n_time <- 70 # number of time points to simulate for
+n_burn <- 50 # burn-in for time series
+xx <- matrix(0, n_time, n_ts)
+set.seed(123) 
+xx[1, ] <- rnorm(n_ts) # initial state
+B <- matrix(rnorm(n = n_ts * n_ts, mean = 0, sd = 0.1), n_ts, n_ts)
+diag(B) <- runif(n_ts, min = 0.7, max = 0.9) # make diagonals 0.7 - 0.9
+```
+
+Here is what the $\mathbf{B}$ matrix looks like,  
+```{r echo=FALSE}
+knitr::kable(B, digits = 2)
+```
+
+Next we can simulate the evolution of the states,  
+```{r}
+for (i in 2:n_time) { # simualte evolution of states
+  xx[i, ] <- B %*% xx[i - 1, ] + rnorm(n_ts, mean = 0, sd = 0.04)
+}
+xx <- xx[-c(1:n_burn), ] # drop burn in data
+```
+
+Finally we can add observation error noise  
+```{r}
+yy <- xx + rnorm(n = nrow(xx) * ncol(xx), mean = 0, sd = 0.02)
+df <- data.frame(
+  "time" = rep(1:nrow(yy), ncol(yy)),
+  "species" = sort(rep(1:ncol(yy), nrow(yy))),
+  "y" = c(yy)
+)
+head(df)
+```
+
+## Fitting a model (and optional arguments)
+
+We can fit a model to this data using the `varlasso::fit` function, which at a minimum takes in the dataframe and MCMC parameters.  
+
+```{r eval = FALSE}
+m <- fit(data = df, 
+         chains = chains, 
+         iter = iter, 
+         warmup = warmup, 
+         thin = thin)
+```
+
+There are a few optional arguments that may be applied to this or any model. The `shared_q` and `shared_r` arguments can be used to pass in vectors indicating which process error or observation error variances may be shared across time series. By default, all variances are shared across time series. In the example below, process variances are shared among the 1st and 4th time series, and unique for time series 2 and 3. Similarly for the observation error variances, time series 1 and 4 have equal variances and time series 2 and 3 have equal variances. 
+
+```{r eval = FALSE}
+m <- fit(data = df, 
+         chains = chains, 
+         shared_q = c(1,2,3,1),
+         shared_r = c(1,2,2,1),
+         iter = iter, 
+         warmup = warmup, 
+         thin = thin)
+```
+
+In some cases, it may be desireable to fix observation variances; this can be done using the `fixed_r` argument. The `fixed_r` argument can be a vector of fixed values, or alternatively a single scalar. 
+
+```{r eval = FALSE}
+m <- fit(data = df, 
+         chains = chains, 
+         fixed_r = c(0.1, 0.2, 0.2, 0.1),
+         iter = iter, 
+         warmup = warmup, 
+         thin = thin)
+```
+
+For some cases, we may also want to ignore the trend $\mathbf{u}$. This can be turned on / off using the `est_trend` argument
+
+```{r eval = FALSE}
+m <- fit(data = df, 
+         chains = chains, 
+         est_trend = FALSE,
+         iter = iter, 
+         warmup = warmup, 
+         thin = thin)
+```
+
+Finally, observation error can be turned on / off using the `varss` argument. When FALSE, a VAR model is constructed, and if TRUE a VARSS model is fit.  
+
+```{r eval = FALSE}
+m <- fit(data = df, 
+         chains = chains, 
+         varss = FALSE,
+         iter = iter, 
+         warmup = warmup, 
+         thin = thin)
+```
+
+There are a number of additional arguments documented in `?fit`
+
+## Default priors
+
+Many VAR or VARSS models struggle as the number of time series increases, because of the dimensionality of the interaction matrix $\mathbf{B}$. The `varlasso` in this package allows models with alternative priors on the diagonal and off-diagonal elements. By default, these priors are 
+
+$$\mathbf{B_{i,i}} \sim N(0.7, 1)$$
+and 
+$$\mathbf{B_{i,j}} \sim N(0, 1)$$
+These priors may be specified by changing the arguments `b_diag` and `b_offdiag`.  
+
+```{r eval = FALSE}
+m <- fit(data = df, 
+         chains = chains, 
+         b_diag = list(mu = 0.3, sd = 1),
+         b_offdiag = list(mu = 0, sd = 0.1),
+         iter = iter, 
+         warmup = warmup, 
+         thin = thin)
+```
+
+## Shrinkage priors
+
+The `varlasso` package currently only allows for normal priors on the diagonal elements. But because the number of off-diagonal elements can become prohibitively large to work with, we allow for a number of shrinkage priors. These can be changed by using the `off_diag_prior` argument (defaults to 'normal').
+
+As a first option, we may use a partial pooling prior (or hierarchical prior) that estimates a standard deviation, e.g.
+
+$$\mathbf{B_{i,i}} \sim N(0.7, \sigma_{B})$$
+This prior can be specified using the following
+
+```{r eval = FALSE}
+m <- fit(data = df, 
+         chains = chains, 
+         off_diag_prior = "normal_pp",
+         iter = iter, 
+         warmup = warmup, 
+         thin = thin)
+```
+
+Second, we might want to include more extremes in the tails than a normal prior, so instead a Student t-distribution can be included, 
+
+$$\mathbf{B_{i,i}} \sim Student-t(0.7, \sigma_{B}, \nu)$$
+where $\nu$ is included as an estimated degrees of freedom parameter. This prior is specified by setting `off_diag_prior` to "student_t". The $\nu$ parameter can also be optionally fixed with the `nu` argument, e.g.
+
+```{r eval = FALSE}
+m <- fit(data = df, 
+         chains = chains, 
+         nu = 5,
+         off_diag_prior = "student-t",
+         iter = iter, 
+         warmup = warmup, 
+         thin = thin)
+```
+
+As a third prior, we include the Laplace prior (this is also known as a double exponential distribution). This prior has an estimated scale parameter, and is specified with the chunk below
+
+$$\mathbf{B_{i,i}} \sim Laplace(0, \sigma_{B})$$
+
+```{r eval = FALSE}
+m <- fit(data = df, 
+         chains = chains, 
+         nu = 5,
+         off_diag_prior = "laplace",
+         iter = iter, 
+         warmup = warmup, 
+         thin = thin)
+```
+
+Finally, we can include a regularized horseshoe prior,
+
+$$\mathbf{B_{i,i}} \sim hs(\theta)$$
+
+We adopt the same parameterization in `rstanarm` and `brms`. This prior requires specifying several hyperparameters $\theta$, stored as a list in `hs`. The elements of this list include
+
+* `df` Degrees of freedom for the Student-t prior for local shrinkage
+* `df_global` Student-t degrees of freedom for global shrinkage
+* `df_slab` Degrees of freedom of the Student-t prior on the slab regularization
+* `scale_global` Scale parameter for Student-t prior on global shrinkage
+* `scale_slab` Scale of the Student-t prior on shrinkage
+
+```{r eval = FALSE}
+m <- fit(data = df, 
+         chains = chains, 
+         off_diag_prior = "hs",
+         hs = list(df = 1, df_global = 1, df_slab = 4, scale_global = 1, scale_slab = 2)
+         iter = iter, 
+         warmup = warmup, 
+         thin = thin)
+```
